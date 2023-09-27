@@ -1,6 +1,6 @@
-module github.com/gin-contrib/authz
+module github.com/joncfa/authz
 
-go 1.20
+go 1.21
 
 require (
 	github.com/casbin/casbin/v2 v2.77.2

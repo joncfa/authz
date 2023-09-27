@@ -28,7 +28,7 @@ func testAuthzRequest(t *testing.T, router *gin.Engine, user string, path string
 func TestBasic(t *testing.T) {
 	router := gin.New()
 	e, _ := casbin.NewEnforcer("authz_model.conf", "authz_policy.csv")
-	router.Use(NewAuthorizer(e))
+	router.Use(NewAuthorizer(e, GetSubjectBasicAuth))
 	router.Any("/*anypath", func(c *gin.Context) {
 		c.Status(200)
 	})
@@ -42,7 +42,7 @@ func TestBasic(t *testing.T) {
 func TestPathWildcard(t *testing.T) {
 	router := gin.New()
 	e, _ := casbin.NewEnforcer("authz_model.conf", "authz_policy.csv")
-	router.Use(NewAuthorizer(e))
+	router.Use(NewAuthorizer(e, GetSubjectBasicAuth))
 	router.Any("/*anypath", func(c *gin.Context) {
 		c.Status(200)
 	})
@@ -65,7 +65,7 @@ func TestPathWildcard(t *testing.T) {
 func TestRBAC(t *testing.T) {
 	router := gin.New()
 	e, _ := casbin.NewEnforcer("authz_model.conf", "authz_policy.csv")
-	router.Use(NewAuthorizer(e))
+	router.Use(NewAuthorizer(e, GetSubjectBasicAuth))
 	router.Any("/*anypath", func(c *gin.Context) {
 		c.Status(200)
 	})

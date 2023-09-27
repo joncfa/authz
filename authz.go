@@ -12,44 +12,44 @@ import (
 )
 
 // NewAuthorizer returns the authorizer, uses a Casbin enforcer as input
-func NewAuthorizer(e *casbin.Enforcer) gin.HandlerFunc {
-	a := &BasicAuthorizer{enforcer: e}
+func NewAuthorizer(e *casbin.Enforcer, getSubjects func(r *http.Request) []string) gin.HandlerFunc {
+	a := &authorizer{enforcer: e, getSubjects: getSubjects}
 
 	return func(c *gin.Context) {
-		if !a.CheckPermission(c.Request) {
-			a.RequirePermission(c)
+		if !a.checkPermission(c.Request) {
+			c.AbortWithStatus(http.StatusForbidden)
 		}
 	}
 }
 
-// BasicAuthorizer stores the casbin handler
-type BasicAuthorizer struct {
-	enforcer *casbin.Enforcer
+type authorizer struct {
+	enforcer    *casbin.Enforcer
+	getSubjects func(r *http.Request) []string
 }
 
 // GetUserName gets the user name from the request.
 // Currently, only HTTP basic authentication is supported
-func (a *BasicAuthorizer) GetUserName(r *http.Request) string {
+func GetSubjectBasicAuth(r *http.Request) []string {
 	username, _, _ := r.BasicAuth()
-	return username
+	return []string{username}
 }
 
 // CheckPermission checks the user/method/path combination from the request.
 // Returns true (permission granted) or false (permission forbidden)
-func (a *BasicAuthorizer) CheckPermission(r *http.Request) bool {
-	user := a.GetUserName(r)
-	method := r.Method
-	path := r.URL.Path
+func (a *authorizer) checkPermission(r *http.Request) bool {
+	for _, sub := range a.getSubjects(r) {
+		user := sub
+		method := r.Method
+		path := r.URL.Path
 
-	allowed, err := a.enforcer.Enforce(user, path, method)
-	if err != nil {
-		panic(err)
+		allowed, err := a.enforcer.Enforce(user, path, method)
+		if err != nil {
+			panic(err)
+		}
+		if allowed {
+			return true
+		}
 	}
 
-	return allowed
-}
-
-// RequirePermission returns the 403 Forbidden to the client
-func (a *BasicAuthorizer) RequirePermission(c *gin.Context) {
-	c.AbortWithStatus(http.StatusForbidden)
+	return false
 }

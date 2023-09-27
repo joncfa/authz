@@ -12,7 +12,7 @@ Authz is an authorization middleware for [Gin](https://github.com/gin-gonic/gin)
 ## Installation
 
 ```bash
-go get github.com/gin-contrib/authz
+go get github.com/joncfa/authz
 ```
 
 ## Simple Example
@@ -21,8 +21,6 @@ go get github.com/gin-contrib/authz
 package main
 
 import (
-  "net/http"
-
   "github.com/casbin/casbin/v2"
   "github.com/gin-contrib/authz"
   "github.com/gin-gonic/gin"
@@ -30,12 +28,13 @@ import (
 
 func main() {
   // load the casbin model and policy from files, database is also supported.
-  e := casbin.NewEnforcer("authz_model.conf", "authz_policy.csv")
+  e, _ := casbin.NewEnforcer("authz_model.conf", "authz_policy.csv")
 
   // define your router, and use the Casbin authz middleware.
   // the access that is denied by authz will return HTTP 403 error.
   router := gin.New()
-  router.Use(authz.NewAuthorizer(e))
+  // Built in for BasicAuth but can pass in any func(r *http.Request) []string for custom subject processing i.e. jwt
+  router.Use(authz.NewAuthorizer(e, GetSubjectBasicAuth))
 }
 ```
 
@@ -43,7 +42,7 @@ func main() {
 
 The authorization determines a request based on ``{subject, object, action}``, which means what ``subject`` can perform what ``action`` on what ``object``. In this plugin, the meanings are:
 
-1. ``subject``: the logged-on user name
+1. ``subject``: the logged-on username
 2. ``object``: the URL path for the web resource like "dataset1/item1"
 3. ``action``: HTTP method like GET, POST, PUT, DELETE, or the high-level actions you defined like "read-file", "write-blog"
 
